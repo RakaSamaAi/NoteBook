@@ -53,9 +53,10 @@ public class NotebookPresenterImpl implements NotebookPresenter {
     public void loadNotebook(String filename) {
         model.loadFromFile(filename);
         view.displayEntries(model.getEntries());
-        view.displayMessage("Записная книжка загружена из файла: " + filename);
     }
 }
+
+
 
 
 

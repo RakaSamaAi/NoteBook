@@ -1,117 +1,69 @@
 package view;
 
-import model.NotebookEntry;
+import command.*;
 import presenter.NotebookPresenter;
+import model.NotebookEntry;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
-public class NotebookViewImpl extends JFrame implements NotebookView {
+public class NotebookViewImpl implements NotebookView {
     private NotebookPresenter presenter;
-    private JTextArea entriesArea;
-    private JTextField dateTimeField;
-    private JTextField descriptionField;
-    private JTextField filenameField;
-
-    public NotebookViewImpl() {
-        setTitle("Записная книжка");
-        setSize(500, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        initComponents();
-    }
-
-    private void initComponents() {
-        entriesArea = new JTextArea();
-        entriesArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(entriesArea);
-
-        dateTimeField = new JTextField();
-        descriptionField = new JTextField();
-        filenameField = new JTextField();
-
-        JButton addButton = new JButton("Добавить запись");
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String dateTimeStr = dateTimeField.getText();
-                    String description = descriptionField.getText();
-                    LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-                    presenter.addEntry(dateTime, description);
-                    presenter.showEntries();
-                } catch (DateTimeParseException ex) {
-                    displayMessage("Ошибка: Неверный формат даты и времени. Используйте формат yyyy-MM-dd HH:mm.");
-                }
-            }
-        });
-
-        JButton showAllButton = new JButton("Показать все записи");
-        showAllButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                presenter.showEntries();
-            }
-        });
-
-        JButton saveButton = new JButton("Сохранить");
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String filename = filenameField.getText();
-                presenter.saveNotebook(filename);
-            }
-        });
-
-        JButton loadButton = new JButton("Загрузить");
-        loadButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String filename = filenameField.getText();
-                presenter.loadNotebook(filename);
-            }
-        });
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 2));
-        panel.add(new JLabel("Дата и время (yyyy-MM-dd HH:mm):"));
-        panel.add(dateTimeField);
-        panel.add(new JLabel("Описание:"));
-        panel.add(descriptionField);
-        panel.add(new JLabel("Имя файла:"));
-        panel.add(filenameField);
-        panel.add(addButton);
-        panel.add(showAllButton);
-        panel.add(saveButton);
-        panel.add(loadButton);
-
-        getContentPane().add(panel, BorderLayout.NORTH);
-        getContentPane().add(scrollPane, BorderLayout.CENTER);
-    }
-
-    @Override
-    public void displayEntries(List<NotebookEntry> entries) {
-        entriesArea.setText("");
-        for (NotebookEntry entry : entries) {
-            entriesArea.append(entry.getDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + " - " + entry.getDescription() + "\n");
-        }
-    }
-
-    @Override
-    public void displayMessage(String message) {
-        JOptionPane.showMessageDialog(this, message);
-    }
+    private final Map<String, Command> commands = new HashMap<>();
+    private final Scanner scanner = new Scanner(System.in);
 
     @Override
     public void setPresenter(NotebookPresenter presenter) {
         this.presenter = presenter;
+        initCommands();
+    }
+
+    private void initCommands() {
+        commands.put("add", new AddEntryCommand(presenter, this));
+        commands.put("remove", new RemoveEntryCommand(presenter, this));
+        commands.put("show", new ShowEntriesCommand(presenter));
+        commands.put("show_day", new ShowEntriesForDayCommand(presenter, this));
+        commands.put("save", new SaveNotebookCommand(presenter, this));
+        commands.put("load", new LoadNotebookCommand(presenter, this));
+    }
+
+    @Override
+    public void start() {
+        while (true) {
+            System.out.println("Введите команду (add, remove, show, show_day, show_week, save, load, exit):");
+            String command = readLine();
+            if ("exit".equalsIgnoreCase(command)) {
+                break;
+            }
+            Command cmd = commands.get(command.toLowerCase());
+            if (cmd != null) {
+                cmd.execute();
+            } else {
+                System.out.println("Неизвестная команда: " + command);
+            }
+        }
+    }
+
+    @Override
+    public void displayEntries(List<NotebookEntry> entries) {
+        entries.forEach(System.out::println);
+    }
+
+    @Override
+    public void displayMessage(String message) {
+        System.out.println(message);
+    }
+
+    @Override
+    public String readLine() {
+        return scanner.nextLine();
     }
 }
+
+
+
 
 
 

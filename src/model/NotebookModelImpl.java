@@ -22,7 +22,7 @@ public class NotebookModelImpl implements NotebookModel {
 
     @Override
     public List<NotebookEntry> getEntries() {
-        return new ArrayList<>(entries);
+        return entries;
     }
 
     @Override
@@ -38,8 +38,8 @@ public class NotebookModelImpl implements NotebookModel {
         return entries.stream()
                 .filter(entry -> {
                     LocalDate entryDate = entry.getDateTime().toLocalDate();
-                    return (entryDate.isEqual(startOfWeek) || entryDate.isAfter(startOfWeek)) &&
-                            (entryDate.isEqual(endOfWeek) || entryDate.isBefore(endOfWeek));
+                    return (entryDate.equals(startOfWeek) || entryDate.isAfter(startOfWeek)) &&
+                            (entryDate.equals(endOfWeek) || entryDate.isBefore(endOfWeek));
                 })
                 .collect(Collectors.toList());
     }
@@ -55,6 +55,11 @@ public class NotebookModelImpl implements NotebookModel {
 
     @Override
     public void loadFromFile(String filename) {
+        File file = new File(filename);
+        if (!file.exists()) {
+            System.out.println("Файл не найден: " + filename);
+            return;
+        }
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
             entries = (List<NotebookEntry>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
@@ -62,6 +67,8 @@ public class NotebookModelImpl implements NotebookModel {
         }
     }
 }
+
+
 
 
 
